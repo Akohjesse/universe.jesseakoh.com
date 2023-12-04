@@ -32,7 +32,7 @@
     border-radius: 1rem;
 }
 .loadingScreen_bar-fill {
-    width: 100%;
+    width: 0%;
     height: 100%;
     border-radius: 1rem;
     background: linear-gradient(to right, #ec2f4b, #009fff);
