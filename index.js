@@ -21,6 +21,9 @@ gltfloader.setDRACOLoader(dLoader);
 let audioContext, audioElement, audioSource, audioGainNode;
 let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
 
+const targetPosition = new THREE.Vector3(0, 4, 4); 
+const zoomDuration = 5000;
+
 
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -140,6 +143,36 @@ function measure() {
     plane.rotation.x = Math.PI / 2;
     scene.add(plane);
 }
+
+function easeInOutQuad(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+const skipButton = document.querySelector('.skip');
+skipButton.addEventListener('click', zoomToTarget);
+
+function zoomToTarget() {
+    const startPosition = camera.position.clone();
+    const startTime = Date.now();
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const fraction = elapsed / zoomDuration;
+        if (fraction < 1) {
+            const easedFraction = easeInOutQuad(fraction);
+            camera.position.lerpVectors(startPosition, targetPosition, easedFraction);
+            requestAnimationFrame(animate);
+        } else {
+            camera.position.copy(targetPosition);
+        }
+    }
+    skipButton.classList.add("animate__fadeOut");
+    setTimeout(() => {
+         skipButton.style.display ="none"
+    })
+    animate();
+}
+
 
 function setEnvironment() {
     const outerSphereGeometry = new THREE.SphereGeometry(10, 60, 40);
@@ -312,11 +345,10 @@ function createGlobe() {
     scene.add(sphere);
 }
 
-
 function render() {
     const delta = clock.getDelta();
     uniforms.u_time.value = clock.getElapsedTime();
-    controls.update(delta);
+    controls.update();
     renderer.render(scene, camera);
     const outerSphereRadius = 10; 
     const outerSphereCenter = new THREE.Vector3();
