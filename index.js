@@ -354,6 +354,9 @@ function render() {
     const outerSphereCenter = new THREE.Vector3();
     
     if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
+        if (skipButton) {
+            skipButton.style.display = "none"
+        }
         if (audioElement.paused) {
             audioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
