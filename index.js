@@ -24,7 +24,6 @@ let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
 const targetPosition = new THREE.Vector3(0, 4, 4); 
 const zoomDuration = 5000;
 
-
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     audioElement = new Audio('/whotoldyou.mp3');
@@ -36,15 +35,14 @@ function initAudio() {
 
 function initBackgroundAudio() {
     bgAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    bgAudioElement = new Audio('/space.mp3'); 
+    bgAudioElement = new Audio('/space.mp3');
     bgAudioElement.loop = true;
     
     bgAudioSource = bgAudioContext.createMediaElementSource(bgAudioElement);
     bgAudioGainNode = bgAudioContext.createGain();
 
-    bgAudioSource.connect(bgAudioGainNode).connect(bgAudioContext.destination);  
-    bgAudioGainNode.gain.value = 0.5;  
-    bgAudioElement.play();
+    bgAudioSource.connect(bgAudioGainNode).connect(bgAudioContext.destination);
+    bgAudioGainNode.gain.value = 0.5;
 }
 
 window.onload = () => {
@@ -83,6 +81,7 @@ function init() {
          screen.classList.toggle("animate__slideOutUp");
          initAudio();
          initBackgroundAudio();
+         bgAudioElement.play();
          setTimeout(() => {
             screen.style.display="none"
         }, 1000)
@@ -353,18 +352,15 @@ function render() {
     const outerSphereRadius = 10; 
     const outerSphereCenter = new THREE.Vector3();
     
+    
     if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
-        if (skipButton) {
-            skipButton.style.display = "none"
-        }
         if (audioElement.paused) {
             audioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
                 bgAudioElement.pause();
             }
         }
-    }
-    else {
+    } else {
         if (audioElement && !audioElement.paused) {
             audioElement.pause();
             if (bgAudioElement && bgAudioElement.paused) {
