@@ -37,12 +37,12 @@ function initBackgroundAudio() {
     bgAudioContext = new (window.AudioContext || window.webkitAudioContext)();
     bgAudioElement = new Audio('/space.mp3');
     bgAudioElement.loop = true;
-    
     bgAudioSource = bgAudioContext.createMediaElementSource(bgAudioElement);
     bgAudioGainNode = bgAudioContext.createGain();
-
     bgAudioSource.connect(bgAudioGainNode).connect(bgAudioContext.destination);
     bgAudioGainNode.gain.value = 0.5;
+
+    bgAudioElement.play();
 }
 
 window.onload = () => {
@@ -79,11 +79,10 @@ function init() {
      btn.addEventListener("click", () => {
         const screen = document.querySelector(".loadingScreen");
          screen.classList.toggle("animate__slideOutUp");
-         initAudio();
-         initBackgroundAudio();
-         bgAudioElement.play();
          setTimeout(() => {
-            screen.style.display="none"
+             screen.style.display = "none"
+             initAudio();
+             initBackgroundAudio();
         }, 1000)
     })
 
@@ -354,6 +353,9 @@ function render() {
     
     
     if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
+        if (skipButton) {
+            skipButton.style.display = "none"
+        }
         if (audioElement.paused) {
             audioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
