@@ -44,6 +44,13 @@ body{
     border-radius: 1rem;
     
 }
+@media only screen and (max-width: 480px){
+    .loadingScreen_bar {
+        width:18rem;
+        margin: 0 auto;
+        
+    }   
+}
 .loadingScreen_bar-fill {
     width: 0%;
     height: 100%;
