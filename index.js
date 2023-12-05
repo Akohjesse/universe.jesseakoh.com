@@ -46,7 +46,6 @@ function initBackgroundAudio() {
 
 window.onload = () => {
     init();
-    initAudio();
     measure();
     createGlobe();
     setEnvironment();
@@ -79,6 +78,7 @@ function init() {
      btn.addEventListener("click", () => {
         const screen = document.querySelector(".loadingScreen");
          screen.classList.toggle("animate__slideOutUp");
+         initAudio();
          initBackgroundAudio();
          setTimeout(() => {
             screen.style.display="none"
