@@ -26,7 +26,7 @@ const zoomDuration = 5000;
 
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    audioElement = new Audio('/whotoldyou.mp3');
+    audioElement = new Audio('/earth.mp3');
     audioElement.loop = true;
     audioSource = audioContext.createMediaElementSource(audioElement);
     audioGainNode = audioContext.createGain();
@@ -35,7 +35,7 @@ function initAudio() {
 
 function initBackgroundAudio() {
     bgAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    bgAudioElement = new Audio('/space.mp3');
+    bgAudioElement = new Audio('/space1.mp3');
     bgAudioElement.loop = true;
     bgAudioSource = bgAudioContext.createMediaElementSource(bgAudioElement);
     bgAudioGainNode = bgAudioContext.createGain();
