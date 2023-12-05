@@ -1,9 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Mountains+of+Christmas:wght@700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800&family=Sacramento&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 * {
     margin: 0px;
     padding: 0;
     box-sizing: border-box;
-    cursor: grab;
+}
+body{
+    cursor: default;
+    font-family: 'Inter', sans-serif;
 }
 
 .loadingScreen {
@@ -15,15 +18,22 @@
     background-color: #141416;
     z-index: 10;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
     flex-direction: column;
-    gap: 1rem;
+    gap: 3rem;
+}
+.loadingScreen_wrap{
+    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-family: "Mountains of Christmas", serif;
-    color: white;
+    gap: 1rem;
 }
 .loadingScreen h2 {
     font-size: 2rem;
+    font-weight: 700;
 }
 .loadingScreen_bar {
     height: 0.5rem;
@@ -37,17 +47,28 @@
     border-radius: 1rem;
     background: linear-gradient(to right, #ec2f4b, #009fff);
 }
-
-.remove {
-    animation: rem 1s ease-out 1 forwards;
-}
-
-@keyframes rem {
-    0% {
-        opacity: 0.5;
-    }
-    100% {
-        opacity: 0;
-        display: none;
-    }
-} /*# sourceMappingURL=style.css.map */
+.grabbing {
+    cursor: grab;
+  }
+  .enter{
+    visibility:hidden;
+    text-align: center;
+  }
+  .enter button{
+    padding: .4rem 1.5rem;
+    font-family: inherit;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+ }
+ .enter button:hover{
+    scale: 1.03;
+    transition: scale .2s ease-in-out;
+ }
+ .enter small{
+    display: block;
+    margin-top: 1rem;
+    color: rgb(148, 148, 148);
+    font-size: .75rem;
+ }

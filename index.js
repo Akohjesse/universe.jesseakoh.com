@@ -1,4 +1,5 @@
 import "./style.css";
+import 'animate.css';
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -17,14 +18,42 @@ dLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/"
 dLoader.setDecoderConfig({ type: "js" });
 gltfloader.setDRACOLoader(dLoader);
 
+let audioContext, audioElement, audioSource, audioGainNode;
+let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
+
+
+function initAudio() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioElement = new Audio('/whotoldyou.mp3');
+    audioElement.loop = true;
+    audioSource = audioContext.createMediaElementSource(audioElement);
+    audioGainNode = audioContext.createGain();
+    audioSource.connect(audioGainNode).connect(audioContext.destination);
+}
+
+function initBackgroundAudio() {
+    bgAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    bgAudioElement = new Audio('/space.mp3'); 
+    bgAudioElement.loop = true;
+    
+    bgAudioSource = bgAudioContext.createMediaElementSource(bgAudioElement);
+    bgAudioGainNode = bgAudioContext.createGain();
+
+    bgAudioSource.connect(bgAudioGainNode).connect(bgAudioContext.destination);  
+    bgAudioGainNode.gain.value = 0.5;  
+    bgAudioElement.play();
+}
+
 window.onload = () => {
     init();
+    initAudio();
     measure();
     createGlobe();
     setEnvironment();
     loadDancers();
     render();
     resize();
+
 };
 
 function init() {
@@ -38,17 +67,31 @@ function init() {
 
     loadingManager.onLoad = () => {
         setTimeout(() => {
-            const loadscreen = document.querySelector(".loadingScreen");
-            loadscreen.classList.toggle("remove");
+            const loadbar = document.querySelector(".loadingScreen_wrap");
+            const enter = document.querySelector(".enter");
+            loadbar.classList.toggle("animate__fadeOut")
+            enter.classList.toggle("animate__fadeIn");
+            enter.style.visibility = "visible"
         }, 500);
     };
+    
+    const btn = document.getElementById("openPage");
+     btn.addEventListener("click", () => {
+        const screen = document.querySelector(".loadingScreen");
+         screen.classList.toggle("animate__slideOutUp");
+         initBackgroundAudio();
+         setTimeout(() => {
+            screen.style.display="none"
+        }, 1000)
+    })
 
-    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 5000);
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 6000);
     camera.position.set(0, 4, 2800);
     camera.lookAt(0, 4, 2800);
 
     scene = new THREE.Scene();
     scene.add(camera);
+     scene.position.y =-1.4
 
     renderer = new THREE.WebGLRenderer({});
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -61,13 +104,12 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.update();
-    controls.movementSpeed = 30;
-    controls.lookSpeed = 0.04;
+	controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 3.5;
+    controls.autoRotateSpeed = 2.5;
 
     const sbg = textureLoader.load("/nebula.jpg");
     scene.background = sbg;
@@ -104,7 +146,7 @@ function setEnvironment() {
     const innerSphereGeometry = new THREE.SphereGeometry(9, 60, 40);
     innerSphereGeometry.scale(-1, 1, 1);
 
-    const textures = [textureLoader.load("/mountain.jpg"), textureLoader.load("/chalk.jpeg"), textureLoader.load("/marble.jpeg"), textureLoader.load("/abs.jpeg")];
+    const textures = [textureLoader.load("/mountain.jpg"), textureLoader.load("/marble.jpeg"), textureLoader.load("/abs.jpeg")];
 
     const outerSphere = new THREE.Mesh(outerSphereGeometry, new THREE.MeshBasicMaterial({ map: textureLoader.load("/earth_night.jpeg") }));
     const innerSphere = new THREE.Mesh(innerSphereGeometry, new THREE.MeshBasicMaterial({ map: textures[0] }));
@@ -177,7 +219,7 @@ function setEnvironment() {
 }
 
 function loadDancers() {
-    gltfloader.load("/badman.glb", (glb) => {
+    gltfloader.load("/badman/badman.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.6, 0.6, 0.6);
@@ -225,7 +267,7 @@ function loadDancers() {
         }, 500);
     });
 
-    gltfloader.load("/mohammed.glb", (glb) => {
+    gltfloader.load("/mohammed/mohammed.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.5, 0.5, 0.5);
@@ -270,12 +312,32 @@ function createGlobe() {
     scene.add(sphere);
 }
 
+
 function render() {
     const delta = clock.getDelta();
-    //  controls.update(delta);
     uniforms.u_time.value = clock.getElapsedTime();
     controls.update(delta);
     renderer.render(scene, camera);
+    const outerSphereRadius = 10; 
+    const outerSphereCenter = new THREE.Vector3();
+    
+    if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
+        if (audioElement.paused) {
+            audioElement.play();
+            if (bgAudioElement && !bgAudioElement.paused) {
+                bgAudioElement.pause();
+            }
+        }
+    }
+    else {
+        if (audioElement && !audioElement.paused) {
+            audioElement.pause();
+            if (bgAudioElement && bgAudioElement.paused) {
+                bgAudioElement.play();
+            }
+        }
+    }
+
     if (mixer1 && mixer2 && mixer3 && mixer4 && mixer5 && mixer6) {
         mixer1.update(delta);
         mixer2.update(delta);
@@ -284,6 +346,7 @@ function render() {
         mixer5.update(delta);
         mixer6.update(delta);
     }
+
     requestAnimationFrame(render);
 }
 
@@ -297,3 +360,11 @@ function resize() {
         uniforms.u_resolution.value.set(renderer.domElement.width, renderer.domElement.height);
     }
 }
+
+document.addEventListener('mousedown', () => {
+    document.body.classList.add('grabbing');
+  });
+  
+  document.addEventListener('mouseup', () => {
+    document.body.classList.remove('grabbing');
+  });
