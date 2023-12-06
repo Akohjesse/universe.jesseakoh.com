@@ -6,7 +6,6 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
-import { FirstPersonControls } from "three/addons/controls/FirstPersonControls.js";
 
 let scene, camera, renderer, controls, uniforms, mixer1, mixer2, mixer3, mixer4, mixer5, mixer6;
 const clock = new THREE.Clock();
@@ -23,6 +22,13 @@ let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
 
 const targetPosition = new THREE.Vector3(0, 4, 4); 
 const zoomDuration = 5000;
+
+let threeJsLoadProgress = 0;
+let audioLoadProgress = 0;
+let totalLoadProgress = 0; 
+
+const totalAssetsToLoad = 2;
+let assetsLoaded = 0;
 
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -41,7 +47,6 @@ function initBackgroundAudio() {
     bgAudioGainNode = bgAudioContext.createGain();
     bgAudioSource.connect(bgAudioGainNode).connect(bgAudioContext.destination);
     bgAudioGainNode.gain.value = 0.5;
-
     bgAudioElement.play();
 }
 
@@ -58,23 +63,42 @@ window.onload = () => {
 
 function init() {
     loadingManager.onProgress = (url, loaded, total) => {
-        const loadval = document.querySelector("#percent");
-        const bar = document.querySelector(".loadingScreen_bar-fill");
-        const percent = Math.round((loaded / total) * 100);
-        loadval.textContent = percent;
-        bar.style.width = `${percent}%`;
-    };
-
-    loadingManager.onLoad = () => {
-        setTimeout(() => {
-            const loadbar = document.querySelector(".loadingScreen_wrap");
-            const enter = document.querySelector(".enter");
-            loadbar.classList.toggle("animate__fadeOut")
-            enter.classList.toggle("animate__fadeIn");
-            enter.style.visibility = "visible"
-        }, 500);
+        threeJsLoadProgress = (loaded / total) * 50; 
+        updateTotalProgress();
     };
     
+    function loadAudio(url) {
+        const audio = new Audio();
+        audio.src = url;
+        audio.preload = 'auto';
+        audio.oncanplaythrough = () => {
+            assetsLoaded++;
+            audioLoadProgress = (assetsLoaded / totalAssetsToLoad) * 50; 
+            updateTotalProgress();
+        };
+    }
+
+    function updateTotalProgress() {
+        totalLoadProgress = threeJsLoadProgress + audioLoadProgress;
+        const loadval = document.querySelector("#percent");
+        const bar = document.querySelector(".loadingScreen_bar-fill");
+        loadval.textContent = Math.round(totalLoadProgress);
+        bar.style.width = `${totalLoadProgress}%`;
+        if (totalLoadProgress >= 100) {
+            setTimeout(() => {
+                const loadbar = document.querySelector(".loadingScreen_wrap");
+                const enter = document.querySelector(".enter");
+                loadbar.classList.toggle("animate__fadeOut")
+                enter.classList.toggle("animate__fadeIn");
+                enter.style.visibility = "visible"
+            }, 500);
+        }
+    }
+    
+    loadAudio('/space1.mp3');
+    loadAudio('/earth.mp3');
+    
+
     const btn = document.getElementById("openPage");
      btn.addEventListener("click", () => {
         const screen = document.querySelector(".loadingScreen");
@@ -83,7 +107,7 @@ function init() {
              screen.style.display = "none"
              initAudio();
              initBackgroundAudio();
-        }, 1000)
+        }, 500)
     })
 
     camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 6000);
@@ -170,7 +194,6 @@ function zoomToTarget() {
     })
     animate();
 }
-
 
 function setEnvironment() {
     const outerSphereGeometry = new THREE.SphereGeometry(10, 60, 40);
