@@ -1,5 +1,5 @@
 import "./style.css";
-import 'animate.css';
+import "animate.css";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -20,19 +20,19 @@ gltfloader.setDRACOLoader(dLoader);
 let audioContext, audioElement, audioSource, audioGainNode;
 let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
 
-const targetPosition = new THREE.Vector3(0, 4, 4); 
+const targetPosition = new THREE.Vector3(0, 4, 4);
 const zoomDuration = 5000;
 
 let threeJsLoadProgress = 0;
 let audioLoadProgress = 0;
-let totalLoadProgress = 0; 
+let totalLoadProgress = 0;
 
 const totalAssetsToLoad = 2;
 let assetsLoaded = 0;
 
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    audioElement = new Audio('/earth.mp3');
+    audioElement = new Audio("/earth.mp3");
     audioElement.loop = true;
     audioSource = audioContext.createMediaElementSource(audioElement);
     audioGainNode = audioContext.createGain();
@@ -41,7 +41,7 @@ function initAudio() {
 
 function initBackgroundAudio() {
     bgAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-    bgAudioElement = new Audio('/space1.mp3');
+    bgAudioElement = new Audio("/space1.mp3");
     bgAudioElement.loop = true;
     bgAudioSource = bgAudioContext.createMediaElementSource(bgAudioElement);
     bgAudioGainNode = bgAudioContext.createGain();
@@ -58,22 +58,21 @@ window.onload = () => {
     loadDancers();
     render();
     resize();
-
 };
 
 function init() {
     loadingManager.onProgress = (url, loaded, total) => {
-        threeJsLoadProgress = (loaded / total) * 50; 
+        threeJsLoadProgress = (loaded / total) * 50;
         updateTotalProgress();
     };
-    
+
     function loadAudio(url) {
         const audio = new Audio();
         audio.src = url;
-        audio.preload = 'auto';
+        audio.preload = "auto";
         audio.oncanplaythrough = () => {
             assetsLoaded++;
-            audioLoadProgress = (assetsLoaded / totalAssetsToLoad) * 50; 
+            audioLoadProgress = (assetsLoaded / totalAssetsToLoad) * 50;
             updateTotalProgress();
         };
     }
@@ -88,27 +87,26 @@ function init() {
             setTimeout(() => {
                 const loadbar = document.querySelector(".loadingScreen_wrap");
                 const enter = document.querySelector(".enter");
-                loadbar.classList.toggle("animate__fadeOut")
+                loadbar.classList.toggle("animate__fadeOut");
                 enter.classList.toggle("animate__fadeIn");
-                enter.style.visibility = "visible"
+                enter.style.visibility = "visible";
             }, 500);
         }
     }
-    
-    loadAudio('/space1.mp3');
-    loadAudio('/earth.mp3');
-    
+
+    loadAudio("/space1.mp3");
+    loadAudio("/earth.mp3");
 
     const btn = document.getElementById("openPage");
-     btn.addEventListener("click", () => {
+    btn.addEventListener("click", () => {
         const screen = document.querySelector(".loadingScreen");
-         screen.classList.toggle("animate__slideOutUp");
-         setTimeout(() => {
-             screen.style.display = "none"
-             initAudio();
-             initBackgroundAudio();
-        }, 500)
-    })
+        screen.classList.toggle("animate__slideOutUp");
+        setTimeout(() => {
+            screen.style.display = "none";
+            initAudio();
+            initBackgroundAudio();
+        }, 500);
+    });
 
     camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 6000);
     camera.position.set(0, 4, 2800);
@@ -116,7 +114,7 @@ function init() {
 
     scene = new THREE.Scene();
     scene.add(camera);
-     scene.position.y =-1.4
+    scene.position.y = -1.4;
 
     renderer = new THREE.WebGLRenderer({});
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -129,7 +127,7 @@ function init() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.update();
-	controls.enablePan = false;
+    controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
@@ -170,8 +168,8 @@ function easeInOutQuad(t) {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-const skipButton = document.querySelector('.skip');
-skipButton.addEventListener('click', zoomToTarget);
+const skipButton = document.querySelector(".skip");
+skipButton.addEventListener("click", zoomToTarget);
 
 function zoomToTarget() {
     const startPosition = camera.position.clone();
@@ -190,8 +188,8 @@ function zoomToTarget() {
     }
     skipButton.classList.add("animate__fadeOut");
     setTimeout(() => {
-         skipButton.style.display ="none"
-    })
+        skipButton.style.display = "none";
+    });
     animate();
 }
 
@@ -371,13 +369,12 @@ function render() {
     uniforms.u_time.value = clock.getElapsedTime();
     controls.update();
     renderer.render(scene, camera);
-    const outerSphereRadius = 10; 
+    const outerSphereRadius = 10;
     const outerSphereCenter = new THREE.Vector3();
-    
-    
+
     if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
         if (skipButton) {
-            skipButton.style.display = "none"
+            skipButton.style.display = "none";
         }
         if (audioElement.paused) {
             audioElement.play();
@@ -417,10 +414,10 @@ function resize() {
     }
 }
 
-document.addEventListener('mousedown', () => {
-    document.body.classList.add('grabbing');
-  });
-  
-  document.addEventListener('mouseup', () => {
-    document.body.classList.remove('grabbing');
-  });
+document.addEventListener("mousedown", () => {
+    document.body.classList.add("grabbing");
+});
+
+document.addEventListener("mouseup", () => {
+    document.body.classList.remove("grabbing");
+});
