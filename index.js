@@ -7,6 +7,9 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
+import vertexShaderSource from './shaders/vertex.glsl';
+import fragmentShaderSource from './shaders/fragment.glsl';
+
 let scene, camera, renderer, controls, uniforms, mixer1, mixer2, mixer3, mixer4, mixer5, mixer6;
 const clock = new THREE.Clock();
 const loadingManager = new THREE.LoadingManager();
@@ -271,7 +274,7 @@ function setEnvironment() {
 }
 
 function loadDancers() {
-    gltfloader.load("/badman/badman.gltf", (glb) => {
+    gltfloader.load("/gltf/badman/badman.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.6, 0.6, 0.6);
@@ -282,7 +285,7 @@ function loadDancers() {
         action.timeScale = 1.1;
     });
 
-    gltfloader.load("/block/block.gltf", (glb) => {
+    gltfloader.load("/gltf/block/block.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.6, 0.6, 0.6);
@@ -293,7 +296,7 @@ function loadDancers() {
         action.timeScale = 1.1;
     });
 
-    gltfloader.load("/bman.glb", (glb) => {
+    gltfloader.load("/gltf/bman.glb", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.6, 0.6, 0.6);
@@ -305,7 +308,7 @@ function loadDancers() {
         action.timeScale = 1.1;
     });
 
-    gltfloader.load("/dancing_alien/dancing_alien.gltf", (glb) => {
+    gltfloader.load("/gltf/dancing_alien/dancing_alien.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.position.set(3, 0, -0.4);
@@ -319,7 +322,7 @@ function loadDancers() {
         }, 500);
     });
 
-    gltfloader.load("/mohammed/mohammed.gltf", (glb) => {
+    gltfloader.load("/gltf/mohammed/mohammed.gltf", (glb) => {
         const model = glb.scene;
         scene.add(model);
         model.scale.set(0.5, 0.5, 0.5);
@@ -330,7 +333,7 @@ function loadDancers() {
         action.timeScale = 1.1;
     });
 
-    gltfloader.load("/fem-v1/fem.gltf", (gltf) => {
+    gltfloader.load("/gltf/fem-v1/fem.gltf", (gltf) => {
         const model = gltf.scene;
         scene.add(model);
         model.scale.set(0.011, 0.011, 0.011);
@@ -353,8 +356,8 @@ function createGlobe() {
 
     const material = new THREE.ShaderMaterial({
         uniforms: uniforms,
-        vertexShader: document.getElementById("vertex").textContent,
-        fragmentShader: document.getElementById("fragment").textContent,
+        vertexShader: vertexShaderSource,
+        fragmentShader: fragmentShaderSource,
     });
 
     const sphere = new THREE.Mesh(new THREE.SphereGeometry(1000, 52, 16), material);
