@@ -69,9 +69,6 @@ function init() {
         updateTotalProgress();
     };
 
-        loadAudio("/space1.mp3");
-        loadAudio("/earth.mp3");
-
     function loadAudio(url) {
         const audio = new Audio();
         audio.src = url;
@@ -100,6 +97,8 @@ function init() {
 
     const btn = document.getElementById("openPage");
     btn.addEventListener("click", () => {
+        loadAudio("/space1.mp3");
+        loadAudio("/earth.mp3");
         const screen = document.querySelector(".loadingScreen");
         screen.classList.toggle("animate__slideOutUp");
         setTimeout(() => {
