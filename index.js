@@ -65,7 +65,7 @@ window.onload = () => {
 
 function init() {
     loadingManager.onProgress = (url, loaded, total) => {
-        threeJsLoadProgress = (loaded / total) * 50;
+        threeJsLoadProgress = (loaded / total) * 100;
         updateTotalProgress();
     };
 
@@ -78,13 +78,11 @@ function init() {
         audio.preload = "auto";
         audio.oncanplaythrough = () => {
             assetsLoaded++;
-            audioLoadProgress = (assetsLoaded / totalAssetsToLoad) * 50;
-            updateTotalProgress();
         };
     }
 
     function updateTotalProgress() {
-        totalLoadProgress = threeJsLoadProgress + audioLoadProgress;
+        totalLoadProgress = threeJsLoadProgress ;
         const loadval = document.querySelector("#percent");
         const bar = document.querySelector(".loadingScreen_bar-fill");
         loadval.textContent = Math.round(totalLoadProgress);
