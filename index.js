@@ -86,7 +86,7 @@ function init() {
         const bar = document.querySelector(".loadingScreen_bar-fill");
         loadval.textContent = Math.round(totalLoadProgress);
         bar.style.width = `${totalLoadProgress}%`;
-        if (totalLoadProgress >= 100) {
+        if (totalLoadProgress >= 50) {
             setTimeout(() => {
                 const loadbar = document.querySelector(".loadingScreen_wrap");
                 const enter = document.querySelector(".enter");
@@ -96,7 +96,6 @@ function init() {
             }, 500);
         }
     }
-
     loadAudio("/space1.mp3");
     loadAudio("/earth.mp3");
 
