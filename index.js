@@ -69,6 +69,9 @@ function init() {
         updateTotalProgress();
     };
 
+        loadAudio("/space1.mp3");
+        loadAudio("/earth.mp3");
+
     function loadAudio(url) {
         const audio = new Audio();
         audio.src = url;
@@ -96,8 +99,6 @@ function init() {
             }, 500);
         }
     }
-    loadAudio("/space1.mp3");
-    loadAudio("/earth.mp3");
 
     const btn = document.getElementById("openPage");
     btn.addEventListener("click", () => {
