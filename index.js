@@ -86,7 +86,7 @@ function init() {
         const bar = document.querySelector(".loadingScreen_bar-fill");
         loadval.textContent = Math.round(totalLoadProgress);
         bar.style.width = `${totalLoadProgress}%`;
-        if (totalLoadProgress >= 50) {
+        if (totalLoadProgress >= 100) {
             setTimeout(() => {
                 const loadbar = document.querySelector(".loadingScreen_wrap");
                 const enter = document.querySelector(".enter");
