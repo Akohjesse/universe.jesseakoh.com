@@ -80,26 +80,36 @@ body {
     color: rgb(148, 148, 148);
     font-size: 0.75rem;
 }
-.skip {
+.skip_earth {
+    right: 10rem;
+}
+.skip_jup {
+    left: 10rem;
+}
+.jump{
     position: absolute;
+    background-image: url("/earth_night.jpeg");
     bottom: 10rem;
+    font-weight: 700;
+    color: white;
     background-color: white;
     padding: 1rem 1.5rem;
     border-radius: 1rem;
     font-size: 0.9em;
-    color: white;
-    right: 10rem;
-    background-image: url("/earth_night.jpeg");
     background-repeat: no-repeat;
     background-size: cover;
     border: 1px solid gray;
     box-shadow: inset 1px 1px 8px grey;
     cursor: pointer;
-    font-weight: 500;
 }
 @media only screen and (max-width: 480px) {
-    .skip {
+    .skip_earth {
         right: 4rem;
+        bottom: 3rem;
+        transform: scale(0.8);
+    }
+    .skip_jup {
+        left: 1rem;
         bottom: 3rem;
         transform: scale(0.8);
     }

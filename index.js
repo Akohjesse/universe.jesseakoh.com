@@ -6,11 +6,15 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 
-import vertexShaderSource from './shaders/vertex.glsl';
-import fragmentShaderSource from './shaders/fragment.glsl';
+import vertexShaderSource from "./shaders/vertex.glsl";
+import fragmentShaderSource from "./shaders/fragment.glsl";
 
-let scene, camera, renderer, controls, uniforms, mixer1, mixer2, mixer3, mixer4, mixer5, mixer6;
+let mixers = [];
+
+let scene, camera, renderer, controls;
+
 const clock = new THREE.Clock();
 const loadingManager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(loadingManager);
@@ -21,26 +25,49 @@ dLoader.setDecoderConfig({ type: "js" });
 gltfloader.setDRACOLoader(dLoader);
 
 let audioContext, audioElement, audioSource, audioGainNode;
+let jaudioContext, jaudioElement, jaudioSource, jaudioGainNode;
 let bgAudioContext, bgAudioElement, bgAudioSource, bgAudioGainNode;
 
-const targetPosition = new THREE.Vector3(0, 4, 4);
-const zoomDuration = 5000;
-
 let threeJsLoadProgress = 0;
-let audioLoadProgress = 0;
 let totalLoadProgress = 0;
-
-const totalAssetsToLoad = 2;
 let assetsLoaded = 0;
+
+const raycaster = new THREE.Raycaster();
+const mousePosition = new THREE.Vector2();
+let intersects;
+
+let uniforms = {
+    u_time: { type: "f", value: 1.0 },
+    u_resolution: { type: "v2", value: new THREE.Vector2() },
+};
+
+window.onload = () => {
+    init();
+    measure();
+    createGlobe();
+    setEnvironment();
+    loadDancers();
+    render();
+    resize();
+};
 
 function initAudio() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     audioElement = new Audio("/earth.mp3");
     audioElement.loop = true;
-    audioElement.playsInline = true; 
+    audioElement.playsInline = true;
     audioSource = audioContext.createMediaElementSource(audioElement);
     audioGainNode = audioContext.createGain();
     audioSource.connect(audioGainNode).connect(audioContext.destination);
+}
+function initJAudio() {
+    jaudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    jaudioElement = new Audio("/amon.mp3");
+    jaudioElement.loop = true;
+    jaudioElement.playsInline = true;
+    jaudioSource = jaudioContext.createMediaElementSource(jaudioElement);
+    jaudioGainNode = jaudioContext.createGain();
+    jaudioSource.connect(jaudioGainNode).connect(jaudioContext.destination);
 }
 
 function initBackgroundAudio() {
@@ -54,16 +81,6 @@ function initBackgroundAudio() {
     bgAudioGainNode.gain.value = 0.5;
     bgAudioElement.play();
 }
-
-window.onload = () => {
-    init();
-    measure();
-    createGlobe();
-    setEnvironment();
-    loadDancers();
-    render();
-    resize();
-};
 
 function init() {
     loadingManager.onProgress = (url, loaded, total) => {
@@ -81,7 +98,7 @@ function init() {
     }
 
     function updateTotalProgress() {
-        totalLoadProgress = threeJsLoadProgress ;
+        totalLoadProgress = threeJsLoadProgress;
         const loadval = document.querySelector("#percent");
         const bar = document.querySelector(".loadingScreen_bar-fill");
         loadval.textContent = Math.round(totalLoadProgress);
@@ -106,6 +123,7 @@ function init() {
         setTimeout(() => {
             screen.style.display = "none";
             initAudio();
+            initJAudio();
             initBackgroundAudio();
         }, 500);
     });
@@ -170,13 +188,29 @@ function easeInOutQuad(t) {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-const skipButton = document.querySelector(".skip");
-skipButton.addEventListener("click", zoomToTarget);
+const skipE = document.querySelector(".skip_earth");
+skipE.addEventListener("click", () => {
+    const targetPosition = new THREE.Vector3(0, 4, 4);
+    zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
+    skipE.classList.add("animate__fadeOut");
+    setTimeout(() => {
+        skipE.style.display = "none";
+    });
+});
 
-function zoomToTarget() {
+const skipJ = document.querySelector(".skip_jup");
+skipJ.addEventListener("click", () => {
+    const targetPosition = new THREE.Vector3(100, 3, 35);
+    zoomToTarget(targetPosition, 4000, new THREE.Vector3(100, -1, 30));
+    skipJ.classList.add("animate__fadeOut");
+    setTimeout(() => {
+        skipJ.style.display = "none";
+    });
+});
+
+function zoomToTarget(targetPosition, zoomDuration, planetPosition) {
     const startPosition = camera.position.clone();
     const startTime = Date.now();
-
     function animate() {
         const elapsed = Date.now() - startTime;
         const fraction = elapsed / zoomDuration;
@@ -186,12 +220,10 @@ function zoomToTarget() {
             requestAnimationFrame(animate);
         } else {
             camera.position.copy(targetPosition);
+            controls.target.copy(planetPosition);
+            controls.update();
         }
     }
-    skipButton.classList.add("animate__fadeOut");
-    setTimeout(() => {
-        skipButton.style.display = "none";
-    });
     animate();
 }
 
@@ -205,7 +237,7 @@ function setEnvironment() {
     const outerSphere = new THREE.Mesh(outerSphereGeometry, new THREE.MeshBasicMaterial({ map: textureLoader.load("/earth_night.jpeg") }));
     const innerSphere = new THREE.Mesh(innerSphereGeometry, new THREE.MeshBasicMaterial({ map: textures[0] }));
     scene.add(innerSphere);
-
+    outerSphere.name = "earth";
     scene.add(outerSphere);
 
     let currentTextureIndex = 0;
@@ -250,8 +282,37 @@ function setEnvironment() {
             map: textureLoader.load("/jupiter.jpeg"),
         }),
     );
+    Jupiter.name = "Jupiter";
     Jupiter.position.set(100, -1, 30);
     scene.add(Jupiter);
+
+    gltfloader.load("/gltf/plastered_stone_wall_1k.gltf/plastered_stone_wall_1k.gltf", (g) => {
+        let tex = g.scene.children[0].material.map;
+        const insideJupiter = new THREE.Mesh(
+            new THREE.SphereGeometry(29, 30, 30),
+            new THREE.MeshBasicMaterial({
+                map: tex,
+            }),
+        );
+
+        insideJupiter.geometry.scale(1, -1, 1);
+        insideJupiter.position.copy(Jupiter.position);
+        scene.add(insideJupiter);
+    });
+
+    gltfloader.load("/gltf/rocks_ground_04_1k.gltf/rocks_ground_04_1k.gltf", (gltf) => {
+        const texture = gltf.scene.children[0].material.map;
+        const jupiterBase = new THREE.Mesh(
+            new THREE.CircleGeometry(29, 42),
+            new THREE.MeshPhongMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+            }),
+        );
+        jupiterBase.rotation.x = Math.PI / 2;
+        jupiterBase.position.set(100, 0, 30);
+        scene.add(jupiterBase);
+    });
 
     const saturn = new THREE.Mesh(
         new THREE.SphereGeometry(10, 30, 30),
@@ -272,87 +333,7 @@ function setEnvironment() {
     scene.add(neptune);
 }
 
-function loadDancers() {
-    gltfloader.load("/gltf/badman/badman.gltf", (glb) => {
-        const model = glb.scene;
-        scene.add(model);
-        model.scale.set(0.6, 0.6, 0.6);
-        model.position.x = 1;
-        mixer1 = new THREE.AnimationMixer(model);
-        let action = mixer1.clipAction(glb.animations[0]);
-        action.play();
-        action.timeScale = 1.1;
-    });
-
-    gltfloader.load("/gltf/block/block.gltf", (glb) => {
-        const model = glb.scene;
-        scene.add(model);
-        model.scale.set(0.6, 0.6, 0.6);
-        model.position.x = -1;
-        mixer3 = new THREE.AnimationMixer(model);
-        let action = mixer3.clipAction(glb.animations[0]);
-        action.play();
-        action.timeScale = 1.1;
-    });
-
-    gltfloader.load("/gltf/bman.glb", (glb) => {
-        const model = glb.scene;
-        scene.add(model);
-        model.scale.set(0.6, 0.6, 0.6);
-        model.position.set(-1, 0, 2.5);
-        model.rotation.y = 3;
-        mixer2 = new THREE.AnimationMixer(model);
-        let action = mixer2.clipAction(glb.animations[0]);
-        action.play();
-        action.timeScale = 1.1;
-    });
-
-    gltfloader.load("/gltf/dancing_alien/dancing_alien.gltf", (glb) => {
-        const model = glb.scene;
-        scene.add(model);
-        model.position.set(3, 0, -0.4);
-        model.rotation.y = -2;
-        mixer5 = new THREE.AnimationMixer(model);
-        let action = mixer5.clipAction(glb.animations[0]);
-        action.play();
-        action.timeScale = 1;
-        setTimeout(() => {
-            action.play();
-        }, 500);
-    });
-
-    gltfloader.load("/gltf/mohammed/mohammed.gltf", (glb) => {
-        const model = glb.scene;
-        scene.add(model);
-        model.scale.set(0.5, 0.5, 0.5);
-        model.position.z = -2;
-        mixer6 = new THREE.AnimationMixer(model);
-        let action = mixer6.clipAction(glb.animations[0]);
-        action.play();
-        action.timeScale = 1.1;
-    });
-
-    gltfloader.load("/gltf/fem-v1/fem.gltf", (gltf) => {
-        const model = gltf.scene;
-        scene.add(model);
-        model.scale.set(0.011, 0.011, 0.011);
-        mixer4 = new THREE.AnimationMixer(model);
-        model.position.set(-3.7, 0, 1);
-        model.rotation.y = 1.6;
-        let action = mixer4.clipAction(gltf.animations[0]);
-        action.timeScale = 1;
-        setTimeout(() => {
-            action.play();
-        }, 500);
-    });
-}
-
 function createGlobe() {
-    uniforms = {
-        u_time: { type: "f", value: 1.0 },
-        u_resolution: { type: "v2", value: new THREE.Vector2() },
-    };
-
     const material = new THREE.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vertexShaderSource,
@@ -366,17 +347,222 @@ function createGlobe() {
     scene.add(sphere);
 }
 
+function loadDancers() {
+    gltfloader.load("/gltf/badman/badman.gltf", (glb) => {
+        const model = glb.scene;
+        scene.add(model);
+        model.scale.set(0.6, 0.6, 0.6);
+        model.position.x = 1;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(glb.animations[0]);
+        action.play();
+        action.timeScale = 1.1;
+    });
+
+    gltfloader.load("/gltf/block/block.gltf", (glb) => {
+        const model = glb.scene;
+        scene.add(model);
+        model.scale.set(0.6, 0.6, 0.6);
+        model.position.x = -1;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(glb.animations[0]);
+        action.play();
+        action.timeScale = 1.1;
+    });
+
+    gltfloader.load("/gltf/bman/bman.gltf", (glb) => {
+        const model = glb.scene;
+        scene.add(model);
+        model.scale.set(0.6, 0.6, 0.6);
+        model.position.set(-1, 0, 2.5);
+        model.rotation.y = 3;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(glb.animations[0]);
+        action.play();
+        action.timeScale = 1.1;
+    });
+
+    gltfloader.load("/gltf/dancing_alien/dancing_alien.gltf", (glb) => {
+        const model = glb.scene;
+        scene.add(model);
+        model.position.set(3, 0, -0.4);
+        model.rotation.y = -2;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(glb.animations[0]);
+        action.play();
+        action.timeScale = 1;
+        setTimeout(() => {
+            action.play();
+        }, 500);
+    });
+
+    gltfloader.load("/gltf/mohammed/mohammed.gltf", (glb) => {
+        const model = glb.scene;
+        scene.add(model);
+        model.scale.set(0.5, 0.5, 0.5);
+        model.position.z = -2;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(glb.animations[0]);
+        action.play();
+        action.timeScale = 1.1;
+    });
+
+    gltfloader.load("/gltf/fem-v1/fem.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(0.011, 0.011, 0.011);
+        model.position.set(-3.7, 0, 1);
+        model.rotation.y = 1.6;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.timeScale = 1;
+        setTimeout(() => {
+            action.play();
+        }, 500);
+    });
+
+    gltfloader.load("/gltf/creature/scene.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.position.set(109, 0, 33);
+        model.scale.set(0.03, 0.03, 0.03);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+        model.renderOrder = 1;
+
+        const clone = SkeletonUtils.clone(model);
+        clone.position.set(82, 0, 33);
+        scene.add(clone);
+
+        let mixerclone = new THREE.AnimationMixer(clone);
+        mixers.push(mixerclone);
+        let cloneAction = mixerclone.clipAction(gltf.animations[0]);
+        cloneAction.play();
+    });
+
+    gltfloader.load("/gltf/techno/techno.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(0.12, 0.12, 0.12);
+        model.position.set(92, 10, 37);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+        action.timeScale = 0.4;
+    });
+
+    gltfloader.load("/gltf/alien_1/alien_1.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(2.4, 2.4, 2.4);
+        model.position.set(106, 0, 27);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+
+    gltfloader.load("/gltf/alien_2/alien_2.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(2.4, 2.4, 2.4);
+        model.position.set(96, 0, 29);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+
+    gltfloader.load("/gltf/alien_3/alien_3.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(1.2, 1.2, 1.2);
+        model.position.set(103, 0, 32);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+
+    gltfloader.load("/gltf/alien_5/alien_5.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(2.4, 2.4, 2.4);
+        model.position.set(97, 0, 36);
+        model.rotation.y = 1.6;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+
+    gltfloader.load("/gltf/alien_6/alien_6.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(0.8, 0.8, 0.8);
+        model.position.set(101, 0, 36);
+        model.rotation.y = 3;
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+
+    gltfloader.load("/gltf/alien_7/alien_7.gltf", (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+        model.scale.set(2.5, 2.5, 2.5);
+        model.position.set(107, 0, 38);
+        let mixer = new THREE.AnimationMixer(model);
+        mixers.push(mixer);
+        model.rotation.y = -2;
+        let action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    });
+}
+
+window.addEventListener("mousemove", (e) => {
+    mousePosition.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mousePosition.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mousePosition, camera);
+    intersects = raycaster.intersectObjects(scene.children);
+});
+
+window.addEventListener("dblclick", () => {
+    let jupiterPos = new THREE.Vector3(100, -1, 30);
+
+    if (camera.position.distanceTo(jupiterPos < 50)) {
+        return;
+    }
+    intersects.sort((a, b) => a.distance - b.distance);
+    if (intersects.length > 0 && intersects[0].object.name === "Jupiter") {
+        const targetPosition = new THREE.Vector3(100, 3, 35);
+        zoomToTarget(targetPosition, 4000, jupiterPos);
+    }
+    if (intersects.length > 0 && intersects[0].object.name === "earth") {
+        const targetPosition = new THREE.Vector3(0, 4, 4);
+        zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
+    }
+});
+
 function render() {
     const delta = clock.getDelta();
     uniforms.u_time.value = clock.getElapsedTime();
     controls.update();
     renderer.render(scene, camera);
-    const outerSphereRadius = 10;
-    const outerSphereCenter = new THREE.Vector3();
 
-    if (camera.position.distanceTo(outerSphereCenter) < outerSphereRadius) {
-        if (skipButton) {
-            skipButton.style.display = "none";
+    if (camera.position.distanceTo(new THREE.Vector3()) < 10) {
+        if (skipE) {
+            skipE.style.display = "none";
         }
         if (audioElement.paused) {
             audioElement.play();
@@ -392,14 +578,29 @@ function render() {
             }
         }
     }
+    if (camera.position.distanceTo(new THREE.Vector3(100, -1, 30)) < 30) {
+        if (skipJ) {
+            skipJ.style.display = "none";
+        }
+        if (jaudioElement.paused) {
+            jaudioElement.play();
+            if (bgAudioElement && !bgAudioElement.paused) {
+                bgAudioElement.pause();
+            }
+        }
+    } else {
+        if (jaudioElement && !jaudioElement.paused) {
+           jaudioElement.pause();
+            if (bgAudioElement && bgAudioElement.paused) {
+                bgAudioElement.play();
+            }
+        }
+    }
 
-    if (mixer1 && mixer2 && mixer3 && mixer4 && mixer5 && mixer6) {
-        mixer1.update(delta);
-        mixer2.update(delta);
-        mixer3.update(delta);
-        mixer4.update(delta);
-        mixer5.update(delta);
-        mixer6.update(delta);
+    for (let i = 0; i < mixers.length; i++) {
+        if (mixers[i]) {
+            mixers[i].update(delta);
+        }
     }
 
     requestAnimationFrame(render);
