@@ -200,8 +200,8 @@ skipE.addEventListener("click", () => {
 
 const skipJ = document.querySelector(".skip_jup");
 skipJ.addEventListener("click", () => {
-    const targetPosition = new THREE.Vector3(100, 3, 35);
-    zoomToTarget(targetPosition, 4000, new THREE.Vector3(100, -1, 30));
+    const targetPosition = new THREE.Vector3(100, -1, 35);
+    zoomToTarget(targetPosition, 7000, new THREE.Vector3(100, 4, 30));
     skipJ.classList.add("animate__fadeOut");
     setTimeout(() => {
         skipJ.style.display = "none";
@@ -538,14 +538,14 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("dblclick", () => {
-    let jupiterPos = new THREE.Vector3(100, -1, 30);
+    let jupiterPos = new THREE.Vector3(100, -1, 35);
 
     if (camera.position.distanceTo(jupiterPos < 50)) {
         return;
     }
     intersects.sort((a, b) => a.distance - b.distance);
     if (intersects.length > 0 && intersects[0].object.name === "Jupiter") {
-        const targetPosition = new THREE.Vector3(100, 3, 35);
+        const targetPosition = new THREE.Vector3(100, 4, 30);
         zoomToTarget(targetPosition, 4000, jupiterPos);
     }
     if (intersects.length > 0 && intersects[0].object.name === "earth") {
@@ -553,6 +553,36 @@ window.addEventListener("dblclick", () => {
         zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
     }
 });
+
+let lastTap = 0;
+
+function onDoubleTap() {
+    let jupiterPos = new THREE.Vector3(100, -1, 35);
+
+    if (camera.position.distanceTo(jupiterPos < 50)) {
+        return;
+    }
+    intersects.sort((a, b) => a.distance - b.distance);
+    if (intersects.length > 0 && intersects[0].object.name === "Jupiter") {
+        const targetPosition = new THREE.Vector3(100, 4, 30);
+        zoomToTarget(targetPosition, 4000, jupiterPos);
+    }
+    if (intersects.length > 0 && intersects[0].object.name === "earth") {
+        const targetPosition = new THREE.Vector3(0, 4, 4);
+        zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
+    }
+}
+
+window.addEventListener("touchend", () => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    lastTap = currentTime;
+
+    if (tapLength < 500 && tapLength > 0) {
+        onDoubleTap();
+    }
+});
+window.addEventListener("dblclick", (onDoubleTap));
 
 function render() {
     const delta = clock.getDelta();
@@ -578,7 +608,7 @@ function render() {
             }
         }
     }
-    if (camera.position.distanceTo(new THREE.Vector3(100, -1, 30)) < 30) {
+    if (camera.position.distanceTo(new THREE.Vector3(100, -1, 35)) < 30) {
         if (skipJ) {
             skipJ.style.display = "none";
         }
