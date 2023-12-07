@@ -200,8 +200,8 @@ skipE.addEventListener("click", () => {
 
 const skipJ = document.querySelector(".skip_jup");
 skipJ.addEventListener("click", () => {
-    const targetPosition = new THREE.Vector3(100, -1, 35);
-    zoomToTarget(targetPosition, 7000, new THREE.Vector3(100, 4, 30));
+    const targetPosition = new THREE.Vector3( 90 ,4, 25);
+    zoomToTarget(targetPosition, 7000, new THREE.Vector3(100, -1, 35));
     skipJ.classList.add("animate__fadeOut");
     setTimeout(() => {
         skipJ.style.display = "none";
