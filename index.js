@@ -555,7 +555,36 @@ window.addEventListener("dblclick", () => {
     }
 });
 
+let tapCount = 0;
+let tapTimeout;
 
+function onDoubleTap() {
+    let jupiterPos = new THREE.Vector3(100, -1, 35);
+
+    if (camera.position.distanceTo(jupiterPos < 50)) {
+        return;
+    }
+    intersects.sort((a, b) => a.distance - b.distance);
+    if (intersects.length > 0 && intersects[0].object.name === "Jupiter") {
+        const targetPosition = new THREE.Vector3(100, 4, 30);
+        zoomToTarget(targetPosition, 4000, jupiterPos);
+    }
+    if (intersects.length > 0 && intersects[0].object.name === "earth") {
+        const targetPosition = new THREE.Vector3(0, 4, 4);
+        zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
+    }
+}
+
+window.addEventListener("touchend", () => {
+    tapCount++;
+    clearTimeout(tapTimeout);
+    tapTimeout = setTimeout(() => tapCount = 0, 500);
+
+    if (tapCount === 3) {
+      onDoubleTap()
+        tapCount = 0;
+    }
+});
 
 function render() {
     const delta = clock.getDelta();
@@ -564,6 +593,9 @@ function render() {
     renderer.render(scene, camera);
 
     if (camera.position.distanceTo(new THREE.Vector3()) < 10) {
+        if (skipE) {
+            skipE.style.display = "none";
+        }
         if (audioElement.paused) {
             audioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
@@ -579,6 +611,9 @@ function render() {
         }
     }
     if (camera.position.distanceTo(new THREE.Vector3(100, -1, 35)) < 30) {
+        if (skipJ) {
+            skipJ.style.display = "none";
+        }
         if (jaudioElement.paused) {
             jaudioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
