@@ -486,7 +486,8 @@ function loadDancers() {
         const model = gltf.scene;
         scene.add(model);
         model.scale.set(1.2, 1.2, 1.2);
-        model.position.set(103, 0, 32);
+        model.position.set(101, 0, 36);
+        model.rotation.y = 3;
         let mixer = new THREE.AnimationMixer(model);
         mixers.push(mixer);
         let action = mixer.clipAction(gltf.animations[0]);
@@ -509,8 +510,8 @@ function loadDancers() {
         const model = gltf.scene;
         scene.add(model);
         model.scale.set(0.8, 0.8, 0.8);
-        model.position.set(101, 0, 36);
-        model.rotation.y = 3;
+        model.position.set(103, 0, 32);
+
         let mixer = new THREE.AnimationMixer(model);
         mixers.push(mixer);
         let action = mixer.clipAction(gltf.animations[0]);
@@ -554,35 +555,7 @@ window.addEventListener("dblclick", () => {
     }
 });
 
-let lastTap = 0;
 
-function onDoubleTap() {
-    let jupiterPos = new THREE.Vector3(100, -1, 35);
-
-    if (camera.position.distanceTo(jupiterPos < 50)) {
-        return;
-    }
-    intersects.sort((a, b) => a.distance - b.distance);
-    if (intersects.length > 0 && intersects[0].object.name === "Jupiter") {
-        const targetPosition = new THREE.Vector3(100, 4, 30);
-        zoomToTarget(targetPosition, 4000, jupiterPos);
-    }
-    if (intersects.length > 0 && intersects[0].object.name === "earth") {
-        const targetPosition = new THREE.Vector3(0, 4, 4);
-        zoomToTarget(targetPosition, 5000, new THREE.Vector3(0, 0, 0));
-    }
-}
-
-window.addEventListener("touchend", () => {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTap;
-    lastTap = currentTime;
-
-    if (tapLength < 500 && tapLength > 0) {
-        onDoubleTap();
-    }
-});
-window.addEventListener("dblclick", (onDoubleTap));
 
 function render() {
     const delta = clock.getDelta();
@@ -591,9 +564,6 @@ function render() {
     renderer.render(scene, camera);
 
     if (camera.position.distanceTo(new THREE.Vector3()) < 10) {
-        if (skipE) {
-            skipE.style.display = "none";
-        }
         if (audioElement.paused) {
             audioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
@@ -609,9 +579,6 @@ function render() {
         }
     }
     if (camera.position.distanceTo(new THREE.Vector3(100, -1, 35)) < 30) {
-        if (skipJ) {
-            skipJ.style.display = "none";
-        }
         if (jaudioElement.paused) {
             jaudioElement.play();
             if (bgAudioElement && !bgAudioElement.paused) {
